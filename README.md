@@ -23,8 +23,8 @@ The goals / steps of this project are the following:
 [image2]: ./output_images/undistort_test.png "Undistorted"
 [image3]: ./output_images/binary_output.png "Binary Example"
 [image4]: ./output_images/lane_fit.png "Fit Visual"
-[image5]: .//output_images/final_output.png "Output"
-[video1]: ./project_video.mp4 "Video"
+[image5]: ./output_images/final_output.png "Output"
+[video1]: project_video.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
 
