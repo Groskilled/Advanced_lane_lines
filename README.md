@@ -42,7 +42,7 @@ You're reading it!
 
 #### 1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
 
-The code for this step is contained in lines 177 through 188 of the main.py.  
+The code for this step is contained in lines 163 through 174 of the main.py.  
 
 I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image.  `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection.  
 
@@ -52,11 +52,11 @@ I then used the output `objpoints` and `imgpoints` to compute the camera calibra
 
 ![alt text][image2]
 
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines 90 through 118 in main.py).  Here's an example of my output for this step.  
+I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines 103 through 133 in main.py).  Here's an example of my output for this step.  
 
 ![alt text][image3]
 
-The code for my perspective transform includes a function called perspective_transform(), which appears in lines 80 through 87 (output_images/examples/example.py). The `perspective_transform()` function takes as inputs an image (`img`).  I chose the hardcode the source and destination points in the following manner:
+The code for my perspective transform includes a function called perspective_transform(), which appears in lines 95 through 101 (output_images/examples/example.py). The `perspective_transform()` function takes as inputs an image (`img`).  I chose the hardcode the source and destination points in the following manner:
 
 ```python
 src = np.float32([[500, 482],[780, 482],[1250, 720],[40, 720]])
@@ -78,11 +78,11 @@ Then I had to find the lines in the lower half of the image and which point belo
 
 ![alt text][image4]
 
-I calculated the radius of curvature and the position of the vehicule with respect to center in lines # through # in my code in `main.py`
+I calculated the radius of curvature in lines 83 through 90 in my code in `main.py` and the position of the vehicule with respect to center at line 182.
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-I finally plotted the lane area back to the image in lines # through # in my code in the function `map_lane()`. Here is an example of my result on a test image:
+I finally plotted the lane area back to the image. Here is an example of my result on a test image:
 
 ![alt text][image5]
 
