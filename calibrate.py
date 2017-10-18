@@ -9,17 +9,20 @@ import matplotlib.image as mpimg
 from numpy.linalg import inv
 import pickle
 
+
 class Line():
     def __init__(self):
         self.detected = False
         self.X = None
         self.Y = None
         self.base = 0
-        self.recent_xfitted = []
+        self.recent_xfitted = None
         self.radius_of_curvature = None
         self.line_base_pos = None
+        self.prev_poly = None
+        self.xint = None
 
-    def toto(self, binary_warped):
+    def find_lane(self, binary_warped):
         out_img = np.dstack((binary_warped, binary_warped, binary_warped))*255
         histogram = np.sum(binary_warped[int(binary_warped.shape[0]/2):,:], axis=0)
         midpoint = np.int(histogram.shape[0]/2)
@@ -52,8 +55,19 @@ class Line():
         y = np.array(y).astype(np.float32)
         x = np.array(x).astype(np.float32)
         fit = np.polyfit(y, x, 2)
+        if self.prev_poly is not None:
+            p1 = self.prev_poly[0]
+            p2 = self.prev_poly[1]
+            p3 = self.prev_poly[2]
+            if np.sqrt(pow(p1 - fit[0],2)) < 0.5 and np.sqrt(pow(p2 - fit[1],2)) < 0.5 :
+                self.prev_poly = fit
+            else:
+                return self.recent_xfitted
+        else :
+            self.prev_poly = fit
         fitx = fit[0]*y**2 + fit[1]*y + fit[2]
         x_int = fit[0]*720**2 + fit[1]*720 + fit[2]
+        self.xint = x_int
         x = np.append(x, x_int)
         y = np.append(y, 720)
         x = np.append(x,fit[0]*0**2 + fit[1]*0 + fit[2])
@@ -64,17 +78,18 @@ class Line():
         fit = np.polyfit(self.Y, self.X, 2)
         fitx = fit[0]*self.Y**2 + fit[1]*self.Y + fit[2]
         tmp = np.vstack([fitx, self.Y])
- 
-        self.recent_xfitted.append(tmp)
-        if len(self.recent_xfitted) > 5:
-            self.recent_xfitted.pop()
-        return self.recent_xfitted.pop()
+        self.recent_xfitted = tmp
 
-    def caca(self):
-        ym_per_pix = 30./720 # meters per pixel in y dimension
-        xm_per_pix = 3.7/700 # meteres per pixel in x dimension
-        fit_cr = np.polyfit(y*ym_per_pix, x*xm_per_pix, 2)
-        curve = ((1 + (2*fit_cr[0]*np.max(y) + fit_cr[1])**2)**1.5) /np.absolute(2*fit_cr[0])
+        ploty = np.linspace(0, 719, num=720)
+        quadratic_coeff = 3e-4 # arbitrary quadratic coefficient
+        leftx = np.array([200 + (self.Y**2)*quadratic_coeff + np.random.randint(-50, high=51)for y in ploty])
+        y_eval = np.max(ploty)
+        ym_per_pix = 30/720 # meters per pixel in y dimension
+        xm_per_pix = 3.7/700 # meters per pixel in x dimension
+        fit_cr = np.polyfit(self.Y*ym_per_pix, self.X*xm_per_pix, 2)
+        self.radius_of_curvature = ((1 + (2*fit_cr[0]*y_eval*ym_per_pix + fit_cr[1])**2)**1.5) / np.absolute(2*fit_cr[0])
+        
+        return self.recent_xfitted
 
 def perspective_transform(img):
     src = np.float32([[500, 482],[780, 482],[1250, 720],[40, 720]])
@@ -95,13 +110,13 @@ def get_binary_img(img):
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
-    # Sobel x
     sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0) # Take the derivative in x
     abs_sobelx = np.absolute(sobelx) # Absolute x derivative to accentuate lines away from horizontal
     scaled_sobel = np.uint8(255*abs_sobelx/np.max(abs_sobelx))
     sx_binary = np.zeros_like(scaled_sobel)
     sx_binary[(scaled_sobel >=10) & (scaled_sobel <= 255)] = 1
 
+    
     s_binary = np.zeros_like(s_channel)
     s_binary[(s_channel >= 150) & (s_channel <= 255)] = 1
 
@@ -111,8 +126,9 @@ def get_binary_img(img):
     l_binary = np.zeros_like(l_channel)
     l_binary[(l_channel >= 200) & (l_channel <= 255)] = 1
     
-    binary_warped = np.zeros_like(s_binary)
+G   binary_warped = np.zeros_like(s_binary)
     binary_warped[(sx_binary == 1) & (s_binary == 1) | (r_binary == 1) & (l_binary == 1)] = 1
+
     return binary_warped
 
 def undistort(objpoints, imgpoints, img):
@@ -126,8 +142,8 @@ def img_process(img):
     binary_warped = get_binary_img(warped)
     out_img = np.copy(binary_warped)
 
-    pts_left = np.array([np.flipud(np.transpose(left.toto(out_img)))])
-    pts_right = np.array([np.transpose(np.vstack(right.toto(out_img)))])
+    pts_left = np.array([np.flipud(np.transpose(left.find_lane(out_img)))])
+    pts_right = np.array([np.transpose(np.vstack(right.find_lane(out_img)))])
     pts = np.hstack((pts_left, pts_right))
     
     img_size = (img.shape[1], img.shape[0])
@@ -155,15 +171,12 @@ for idx, fname in enumerate(images):
     if ret == True:
         objpoints.append(objp)
         imgpoints.append(corners)
-img_process(mpimg.imread('test_images/test2.jpg'))
-
-sys.exit()
-
-video_output = 'result.mp4'
-clip1 = VideoFileClip("project_video.mp4")
 
 left = Line()
 right = Line()
 right.base = 640
+video_output = 'result.mp4'
+clip1 = VideoFileClip("project_video.mp4")
 white_clip = clip1.fl_image(img_process)
 white_clip.write_videofile(video_output, audio=False)
+#tmp = 640 - (left.xint + right.xint)/2
