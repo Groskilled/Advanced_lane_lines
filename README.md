@@ -1,9 +1,3 @@
-## Writeup Template
-
-### You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
-
----
-
 **Advanced Lane Finding Project**
 
 The goals / steps of this project are the following:
@@ -51,6 +45,8 @@ I then used the output `objpoints` and `imgpoints` to compute the camera calibra
 ![alt text][image1]
 
 ![alt text][image2]
+
+If you want to see the effect on the calibration image, there is the outuput of it in the output_images folder (calibration3_undist)
 
 I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines 103 through 133 in main.py).  Here's an example of my output for this step.  
 
