@@ -126,7 +126,7 @@ def get_binary_img(img):
     l_binary = np.zeros_like(l_channel)
     l_binary[(l_channel >= 200) & (l_channel <= 255)] = 1
     
-G   binary_warped = np.zeros_like(s_binary)
+    binary_warped = np.zeros_like(s_binary)
     binary_warped[(sx_binary == 1) & (s_binary == 1) | (r_binary == 1) & (l_binary == 1)] = 1
 
     return binary_warped
@@ -145,6 +145,7 @@ def img_process(img):
     pts_left = np.array([np.flipud(np.transpose(left.find_lane(out_img)))])
     pts_right = np.array([np.transpose(np.vstack(right.find_lane(out_img)))])
     pts = np.hstack((pts_left, pts_right))
+    tmp = (640 - (left.xint + right.xint)/2) * 3.7/700
     
     img_size = (img.shape[1], img.shape[0])
     src = np.float32([[500, 482],[780, 482],[1250, 720],[40, 720]])
@@ -157,6 +158,8 @@ def img_process(img):
     cv2.polylines(color_warp, np.int_([pts]), isClosed=False, color=(0,0,255), thickness = 40)
     cv2.fillPoly(color_warp, np.int_([pts]), (0,255, 0))
     newwarp = cv2.warpPerspective(color_warp, Minv, (binary_warped.shape[1], binary_warped.shape[0]))
+    cv2.putText(newwarp, 'Vehicle is {:.2f}m away of center'.format(tmp), (100,80),fontFace = 16, fontScale = 2, color=(255,255,255), thickness = 2)
+    cv2.putText(newwarp, 'Radius of Curvature {}(m)'.format(int((left.radius_of_curvature+right.radius_of_curvature)/2)), (120,140),fontFace = 16, fontScale = 2, color=(255,255,255), thickness = 2)
     return cv2.addWeighted(image, 1, newwarp, 0.5, 0)
 
 objp = np.zeros((6*9,3), np.float32)
@@ -179,4 +182,3 @@ video_output = 'result.mp4'
 clip1 = VideoFileClip("project_video.mp4")
 white_clip = clip1.fl_image(img_process)
 white_clip.write_videofile(video_output, audio=False)
-#tmp = 640 - (left.xint + right.xint)/2
